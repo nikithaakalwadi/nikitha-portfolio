@@ -16,12 +16,9 @@ html{scroll-behavior:smooth}
 body{background:var(--cream);color:var(--dark);font-family:'DM Sans',sans-serif;overflow-x:hidden;cursor:none}
 
 /* ── CURSOR ── */
-#cursor{position:fixed;width:12px;height:12px;background:var(--red);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .2s,height .2s,background .2s}
-#cursor-ring{position:fixed;width:40px;height:40px;border:2px solid var(--red);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:transform .08s,width .2s,height .2s,opacity .2s,border-color .2s;opacity:0.5}
-/* cursor turns amber on red backgrounds */
-#about #cursor, #about~#cursor{background:var(--amber)}
-section#about *{--cursor-color:var(--amber)}
-body:hover #cursor{opacity:1}
+#cursor{position:fixed;width:32px;height:32px;pointer-events:none;z-index:9999;transform:translate(-50%,-50%) rotate(0deg);transition:width .2s,height .2s;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
+#cursor svg{width:100%;height:100%;display:block;transition:fill .2s}
+#cursor-ring{display:none}
 
 /* ── LOADER ── */
 #loader{position:fixed;inset:0;background:var(--dark);z-index:10000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
@@ -229,7 +226,7 @@ footer{background:var(--cream);color:var(--dark);position:relative;overflow:hidd
 <body>
 
 <!-- CURSOR -->
-<div id="cursor"></div>
+<div id="cursor"><svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path id="star-path" d="M20 2 L23.5 16.5 L38 20 L23.5 23.5 L20 38 L16.5 23.5 L2 20 L16.5 16.5 Z" fill="#E03D1A" stroke="#1A1008" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
 <div id="cursor-ring"></div>
 
 <!-- LOADER -->
@@ -619,27 +616,45 @@ footer{background:var(--cream);color:var(--dark);position:relative;overflow:hidd
 // ── CURSOR ──
 const cursor = document.getElementById('cursor');
 const ring = document.getElementById('cursor-ring');
-let mx=0,my=0,rx=0,ry=0;
+let mx=0,my=0,rx=0,ry=0,isHovering=false,cursorAngle=0;
+const starPath = document.getElementById('star-path');
+
+function getStarColor(){
+  if(isHovering) return '#E8920A'; // amber on hover
+  const el = document.elementFromPoint(mx, my);
+  if(!el) return '#E03D1A';
+  const onDark = el.closest('#about,#process,#contact,#footer,.ticker,.mini-ticker,.big-scroll-text,.footer-strip,.footer-bottom');
+  return onDark ? '#E8920A' : '#E03D1A';
+}
+function updateCursorColor(){
+  if(starPath) starPath.setAttribute('fill', getStarColor());
+}
+
+// spin cursor continuously
+function spinCursor(){
+  if(!isHovering) cursorAngle += 0.5;
+  else cursorAngle += 1.5; // faster spin on hover
+  cursor.style.transform = `translate(-50%,-50%) rotate(${cursorAngle}deg)`;
+  requestAnimationFrame(spinCursor);
+}
+spinCursor();
+
 document.addEventListener('mousemove',e=>{
   mx=e.clientX; my=e.clientY;
   cursor.style.left=mx+'px'; cursor.style.top=my+'px';
+  updateCursorColor();
 });
-function animRing(){
-  rx+=(mx-rx)*.12; ry+=(my-ry)*.12;
-  ring.style.left=rx+'px'; ring.style.top=ry+'px';
-  requestAnimationFrame(animRing);
-}
-animRing();
+// ring hidden, star cursor used instead
 document.querySelectorAll('a,button,.project-card,.skill-tag,.fun-chip').forEach(el=>{
   el.addEventListener('mouseenter',()=>{
-    cursor.style.width='20px'; cursor.style.height='20px';
-    cursor.style.background='var(--amber)';
-    ring.style.width='60px'; ring.style.height='60px';
+    isHovering=true;
+    cursor.style.width='48px'; cursor.style.height='48px';
+    if(starPath) starPath.setAttribute('fill','#E8920A');
   });
   el.addEventListener('mouseleave',()=>{
-    cursor.style.width='12px'; cursor.style.height='12px';
-    cursor.style.background='var(--red)';
-    ring.style.width='40px'; ring.style.height='40px';
+    isHovering=false;
+    cursor.style.width='32px'; cursor.style.height='32px';
+    updateCursorColor();
   });
 });
 
